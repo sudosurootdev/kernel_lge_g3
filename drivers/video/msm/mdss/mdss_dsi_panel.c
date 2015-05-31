@@ -143,10 +143,10 @@ u32 mdss_dsi_panel_cmd_read(struct mdss_dsi_ctrl_pdata *ctrl, char cmd0,
 
 #ifdef CONFIG_MACH_LGE_G3_KDDI_LGD_FHD
 void mdss_dsi_panel_cmds_send(struct mdss_dsi_ctrl_pdata *ctrl,
-			struct dsi_panel_cmds *pcmds)
+                       struct dsi_panel_cmds *pcmds)
 #else
 static void mdss_dsi_panel_cmds_send(struct mdss_dsi_ctrl_pdata *ctrl,
-			struct dsi_panel_cmds *pcmds)
+                       struct dsi_panel_cmds *pcmds)
 #endif
 {
 	struct dcs_cmd_req cmdreq;
@@ -221,10 +221,7 @@ void mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 	struct mdss_panel_info *pinfo = NULL;
-	int i;
-#ifdef CONFIG_MACH_LGE
-	int ret;
-#endif
+	int i, ret;
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -252,7 +249,7 @@ void mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 #ifdef CONFIG_MACH_LGE
 		if (pinfo->lcd_marker) {
 			mdelay(300);
-			if (gpio_is_valid(ctrl_pdata->disp_en_gpio)) {
+			if (gpio_is_valid(ctrl_pdata->disp_en_gpio)){
 				gpio_set_value((ctrl_pdata->disp_en_gpio), 1);
 				mdelay(50);
 			}
@@ -260,7 +257,7 @@ void mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			if (gpio_is_valid(ctrl_pdata->disp_en_gpio)){
 				gpio_set_value((ctrl_pdata->disp_en_gpio), 1);
 #ifdef CONFIG_MFD_TPS65132
-				if (ctrl_pdata->num_of_dsv_enable_pin >= 1) {
+				if(ctrl_pdata->num_of_dsv_enable_pin >= 1) {
 					mdelay(1);
 					gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
 					mdelay(5);
@@ -337,10 +334,10 @@ void mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 		gpio_set_value((ctrl_pdata->rst_gpio), 0);
 #endif
 
+#ifdef CONFIG_MFD_TPS65132
 		if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
 			gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
 
-#ifdef CONFIG_MFD_TPS65132
 		if (ctrl_pdata->num_of_dsv_enable_pin >= 1) {
 			if (ctrl_pdata->num_of_dsv_enable_pin > 1)
 				if (gpio_is_valid(ctrl_pdata->disp_en_gpio2))
@@ -534,7 +531,7 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 				panel_data);
 	mipi  = &pdata->panel_info.mipi;
 
-	pr_debug("%s: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
+	pr_info("%s+: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
 
 	if (ctrl->on_cmds.cmd_cnt)
 #ifdef CONFIG_LGE_LCD_TUNING
@@ -548,14 +545,7 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->on_cmds);
 #endif
 
-#ifdef CONFIG_LGE_SHARPENING
-	/* Change to '1' if LG ever decides to disable by default */
-	if (ctrl->shared_pdata.sharpening_state == 0)
-		ctrl->set_sharpening(ctrl, ctrl->shared_pdata.sharpening_state,
-			(void *) 1);
-#endif
-
-	pr_debug("%s:\n", __func__);
+	pr_info("%s-:\n", __func__);
 	return 0;
 }
 
@@ -572,7 +562,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	ctrl = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
 
-	pr_debug("%s: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
+	pr_info("%s+: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
 #ifdef CONFIG_MACH_LGE
 #ifndef CONFIG_MACH_LGE_BACKLIGHT_SUPPORT
 #ifdef CONFIG_MACH_LGE_G3_KDDI_LGD_FHD
@@ -582,13 +572,13 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 		lm3631_lcd_backlight_set_level(0);
 #else
 #if defined(CONFIG_MACH_MSM8974_G3_ATT) || defined(CONFIG_MACH_MSM8974_G3_CA)
-	if (lge_get_board_revno() != HW_REV_E && (lge_get_board_revno() < HW_REV_A || lge_get_board_revno() >= ctrl->lm3697_start_rev))
+        if (lge_get_board_revno() != HW_REV_E && (lge_get_board_revno() < HW_REV_A || lge_get_board_revno() >= ctrl->lm3697_start_rev))
 #else
-	if (lge_get_board_revno() < HW_REV_A || lge_get_board_revno() >= ctrl->lm3697_start_rev)
+        if (lge_get_board_revno() < HW_REV_A || lge_get_board_revno() >= ctrl->lm3697_start_rev)
 #endif
-		lm3697_lcd_backlight_set_level(0);
-	else
-		lm3631_lcd_backlight_set_level(0);
+            lm3697_lcd_backlight_set_level(0);
+        else
+            lm3631_lcd_backlight_set_level(0);
 #endif
 #endif
 #endif
@@ -598,7 +588,7 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 	if (ctrl->off_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->off_cmds);
 
-	pr_debug("%s:-\n", __func__);
+	pr_info("%s:-\n", __func__);
 	return 0;
 }
 
@@ -962,42 +952,6 @@ static int mdss_dsi_parse_reset_seq(struct device_node *np,
 	return 0;
 }
 
-#ifdef CONFIG_LGE_SHARPENING
-static int mdss_dsi_panel_set_sharpening(struct mdss_dsi_ctrl_pdata *ctrl,
-	int state, void *resuming)
-{
-	if (ctrl->shared_pdata.sharpening_state == state && !resuming) {
-		pr_info("sharpening already in requested state");
-		return 0;
-	}
-
-	mdss_dsi_panel_cmds_send(ctrl, state ? &ctrl->sharpening_on :
-		&ctrl->sharpening_off);
-
-	ctrl->shared_pdata.sharpening_state = state;
-
-	pr_info("%s: sharpening %s for ndx %d\n", __func__,
-		state ?	"enabled" : "disabled", ctrl->ndx);
-
-	return 0;
-}
-
-static int mdss_dsi_panel_queue_sharpening(struct mdss_dsi_ctrl_pdata *ctrl,
-	int state)
-{
-	ctrl->shared_pdata.sharpening_state = state;
-
-	pr_info("%s: sharpening %s queued for ndx %d\n", __func__,
-		state ?	"enable" : "disable", ctrl->ndx);
-
-	return 0;
-}
-
-static int mdss_dsi_panel_get_sharpening(struct mdss_dsi_ctrl_pdata *ctrl)
-{
-	return ctrl->shared_pdata.sharpening_state;
-}
-#endif
 
 static int mdss_panel_parse_dt(struct device_node *np,
 			struct mdss_dsi_ctrl_pdata *ctrl_pdata)
@@ -1275,9 +1229,9 @@ static int mdss_panel_parse_dt(struct device_node *np,
 		       __func__, __LINE__);
 		goto error;
 	}
+
 	for (i = 0; i < len; i++)
 		pinfo->mipi.dsi_phy_db.timing[i] = data[i];
-
 	pinfo->mipi.lp11_init = of_property_read_bool(np,
 					"qcom,mdss-dsi-lp11-init");
 	rc = of_property_read_u32(np, "qcom,mdss-dsi-init-delay-us", &tmp);
@@ -1310,15 +1264,6 @@ static int mdss_panel_parse_dt(struct device_node *np,
 #ifdef CONFIG_MACH_LGE_G3_KDDI_LGD_FHD
         mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->set_address_mode_cmds,
             "lge,mdss-set-address-mode-command", "qcom,mdss-dsi-off-command-state");
-#endif
-#ifdef CONFIG_LGE_SHARPENING
-		mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->sharpening_on,
-			"qcom,mdss-dsi-sharpening-on", "qcom,mdss-dsi-sharpening-mode");
-		mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->sharpening_off,
-			"qcom,mdss-dsi-sharpening-off", "qcom,mdss-dsi-sharpening-mode");
-
-		/* Change to 'false' if LG ever decides to disable by default */
-		ctrl_pdata->shared_pdata.sharpening_state = true;
 #endif
 	return 0;
 
@@ -1396,16 +1341,11 @@ int mdss_dsi_panel_init(struct device_node *node,
 	ctrl_pdata->on = mdss_dsi_panel_on;
 	ctrl_pdata->off = mdss_dsi_panel_off;
 	ctrl_pdata->panel_data.set_backlight = mdss_dsi_panel_bl_ctrl;
-#ifdef CONFIG_LGE_SHARPENING
-	ctrl_pdata->set_sharpening = mdss_dsi_panel_set_sharpening;
-	ctrl_pdata->get_sharpening = mdss_dsi_panel_get_sharpening;
-	ctrl_pdata->queue_sharpening = mdss_dsi_panel_queue_sharpening;
-#endif
 
 #ifdef CONFIG_MACH_LGE
-	/* Panel device is not created in KK release */
-	/* create the node file for controlling the ief under the dsi controller device */
-	/* file path: /sys/devices/fd922800.qcom,mdss_dsi/ief_on_off */
+	/* Panel device is not created in KK release										*/
+	/* create the node file for controling the ief under the dsi controller device 				*/
+	/* file path: /sys/devices/fd922800.qcom,mdss_dsi/ief_on_off 						*/
 
 	dsi_ctrl_np = of_parse_phandle(node,
 				"qcom,mdss-dsi-panel-controller", 0);

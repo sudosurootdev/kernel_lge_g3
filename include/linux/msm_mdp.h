@@ -79,44 +79,16 @@
 #define MSMFB_WRITEBACK_SET_MIRRORING_HINT _IOW(MSMFB_IOCTL_MAGIC, 167, \
 						unsigned int)
 #define MSMFB_ASYNC_BLIT              _IOW(MSMFB_IOCTL_MAGIC, 168, unsigned int)
-#define MSMFB_OVERLAY_PREPARE		_IOWR(MSMFB_IOCTL_MAGIC, 169, \
-						struct mdp_overlay_list)
+#define MSMFB_INVERT_PANEL			_IOW(MSMFB_IOCTL_MAGIC, 168, unsigned int)
 
-#ifdef CONFIG_MACH_LGE
-#define MSMFB_INVERT_PANEL			_IOW(MSMFB_IOCTL_MAGIC, 170, unsigned int)
-#endif
 #if defined(CONFIG_LGE_BROADCAST_TDMB)
-#define MSMFB_DMB_SET_FLAG        _IOW(MSMFB_IOCTL_MAGIC, 171, int)
-#define MSMFB_DMB_SET_CSC_MATRIX  _IOW(MSMFB_IOCTL_MAGIC, 172, struct mdp_csc_cfg)
+#define MSMFB_DMB_SET_FLAG        _IOW(MSMFB_IOCTL_MAGIC, 169, int)
+#define MSMFB_DMB_SET_CSC_MATRIX  _IOW(MSMFB_IOCTL_MAGIC, 170, struct mdp_csc_cfg)
 #endif /* LGE_BROADCAST */
 
 #define FB_TYPE_3D_PANEL 0x10101010
 #define MDP_IMGTYPE2_START 0x10000
 #define MSMFB_DRIVER_VERSION	0xF9E8D701
-
-/* HW Revisions for different MDSS targets */
-#define MDSS_GET_MAJOR(rev)		((rev) >> 28)
-#define MDSS_GET_MINOR(rev)		(((rev) >> 16) & 0xFFF)
-#define MDSS_GET_STEP(rev)		((rev) & 0xFFFF)
-#define MDSS_GET_MAJOR_MINOR(rev)	((rev) >> 16)
-
-#define IS_MDSS_MAJOR_MINOR_SAME(rev1, rev2)	\
-	(MDSS_GET_MAJOR_MINOR((rev1)) == MDSS_GET_MAJOR_MINOR((rev2)))
-
-#define MDSS_MDP_REV(major, minor, step)	\
-	((((major) & 0x000F) << 28) |		\
-	 (((minor) & 0x0FFF) << 16) |		\
-	 ((step)   & 0xFFFF))
-
-#define MDSS_MDP_HW_REV_100	MDSS_MDP_REV(1, 0, 0) /* 8974 v1.0 */
-#define MDSS_MDP_HW_REV_101	MDSS_MDP_REV(1, 1, 0) /* 8x26 v1.0 */
-#define MDSS_MDP_HW_REV_101_1	MDSS_MDP_REV(1, 1, 1) /* 8x26 v2.0, 8926 v1.0 */
-#define MDSS_MDP_HW_REV_101_2	MDSS_MDP_REV(1, 1, 2) /* 8926 v2.0 */
-#define MDSS_MDP_HW_REV_102	MDSS_MDP_REV(1, 2, 0) /* 8974 v2.0 */
-#define MDSS_MDP_HW_REV_102_1	MDSS_MDP_REV(1, 2, 1) /* 8974 v3.0 (Pro) */
-#define MDSS_MDP_HW_REV_103	MDSS_MDP_REV(1, 3, 0) /* 8084 v1.0 */
-#define MDSS_MDP_HW_REV_103_1	MDSS_MDP_REV(1, 3, 1) /* 8084 v1.1 */
-#define MDSS_MDP_HW_REV_200	MDSS_MDP_REV(2, 0, 0) /* 8092 v1.0 */
 
 enum {
 	NOTIFY_UPDATE_START,
@@ -228,7 +200,6 @@ enum {
 #define MDP_MEMORY_ID_TYPE_FB		0x00001000
 #define MDP_BWC_EN			0x00000400
 #define MDP_DECIMATION_EN		0x00000800
-#define MDP_SMP_FORCE_ALLOC            0x00200000
 #define MDP_TRANSP_NOP 0xffffffff
 #define MDP_ALPHA_NOP 0xff
 
@@ -564,23 +535,6 @@ struct mdp_scale_data {
 };
 
 /**
- * enum mdp_overlay_pipe_type - Different pipe type set by userspace
- *
- * @PIPE_TYPE_AUTO:    Not specified, pipe will be selected according to flags.
- * @PIPE_TYPE_VIG:     VIG pipe.
- * @PIPE_TYPE_RGB:     RGB pipe.
- * @PIPE_TYPE_DMA:     DMA pipe.
- * @PIPE_TYPE_MAX:     Used to track maximum number of pipe type.
- */
-enum mdp_overlay_pipe_type {
-        PIPE_TYPE_AUTO = 0,
-        PIPE_TYPE_VIG,
-        PIPE_TYPE_RGB,
-        PIPE_TYPE_DMA,
-        PIPE_TYPE_MAX,
-};
-
-/**
  * struct mdp_overlay - overlay surface structure
  * @src:	Source image information (width, height, format).
  * @src_rect:	Source crop rectangle, portion of image that will be fetched.
@@ -602,7 +556,6 @@ enum mdp_overlay_pipe_type {
  *		The color should be in same format as the source image format.
  * @flags:	This is used to customize operation of overlay. See MDP flags
  *		for more information.
- * @pipe_type:  Used to specify the type of overlay pipe.
  * @user_data:	DEPRECATED* Used to store user application specific information.
  * @bg_color:	Solid color used to fill the overlay surface when no source
  *		buffer is provided.
@@ -635,7 +588,6 @@ struct mdp_overlay {
 	uint32_t blend_op;
 	uint32_t transp_mask;
 	uint32_t flags;
-	uint32_t pipe_type;
 	uint32_t id;
 	uint32_t user_data[6];
 	uint32_t bg_color;
@@ -1019,8 +971,6 @@ struct mdss_hw_caps {
 	uint8_t rgb_pipes;
 	uint8_t vig_pipes;
 	uint8_t dma_pipes;
-	uint8_t max_smp_cnt;
-	uint8_t smp_per_pipe;
 	uint32_t features;
 };
 
@@ -1064,24 +1014,6 @@ struct mdp_display_commit {
 	uint32_t wait_for_finish;
 	struct fb_var_screeninfo var;
 	struct mdp_rect roi;
-};
-
-/**
-* struct mdp_overlay_list - argument for ioctl MSMFB_OVERLAY_PREPARE
-* @num_overlays:	Number of overlay layers as part of the frame.
-* @overlay_list:	Pointer to a list of overlay structures identifying
-*			the layers as part of the frame
-* @flags:		Flags can be used to extend behavior.
-* @processed_overlays:	Output parameter indicating how many pipes were
-*			successful. If there are no errors this number should
-*			match num_overlays. Otherwise it will indicate the last
-*			successful index for overlay that couldn't be set.
-*/
-struct mdp_overlay_list {
-	uint32_t num_overlays;
-	struct mdp_overlay **overlay_list;
-	uint32_t flags;
-	uint32_t processed_overlays;
 };
 
 struct mdp_page_protection {

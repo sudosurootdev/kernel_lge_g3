@@ -552,7 +552,7 @@ static int mdss_dsi_unblank(struct mdss_panel_data *pdata)
 	struct mipi_panel_info *mipi;
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 
-	pr_debug("%s+:\n", __func__);
+	pr_info("%s+:\n", __func__);
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -621,7 +621,7 @@ static int mdss_dsi_blank(struct mdss_panel_data *pdata)
 	struct mipi_panel_info *mipi;
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 
-	pr_debug("%s+:\n", __func__);
+	pr_info("%s+:\n", __func__);
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -847,6 +847,8 @@ static int mdss_dsi_dfps_config(struct mdss_panel_data *pdata, int new_fps)
 	return rc;
 }
 
+
+
 static int mdss_dsi_ctl_partial_update(struct mdss_panel_data *pdata)
 {
 	int rc = -EINVAL;
@@ -964,17 +966,6 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 	case MDSS_EVENT_ENABLE_PARTIAL_UPDATE:
 		rc = mdss_dsi_ctl_partial_update(pdata);
 		break;
-#ifdef CONFIG_LGE_SHARPENING
-	case MDSS_EVENT_SET_SHARPENING:
-		rc = ctrl_pdata->set_sharpening(ctrl_pdata, (int) arg, NULL);
-		break;
-	case MDSS_EVENT_GET_SHARPENING:
-		rc = ctrl_pdata->get_sharpening(ctrl_pdata);
-		break;
-	case MDSS_EVENT_QUEUE_SHARPENING:
-		rc = ctrl_pdata->queue_sharpening(ctrl_pdata, (int) arg);
-		break;
-#endif
 	default:
 		pr_debug("%s: unhandled event=%d\n", __func__, event);
 		break;

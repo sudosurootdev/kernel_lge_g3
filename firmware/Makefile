@@ -27,21 +27,15 @@ else
 acenic-objs := acenic/tg1.bin acenic/tg2.bin
 endif
 
-# Use generic/intl synaptics firmware by default.
-synaptics_firmware_subdir := g3
-# Override synaptics firmware for specific variants.
-# There are two variants: g3_clr_pr, g3_kddi_jp.
-# g3_clr_pr does not appear to be referenced in any config files
-# so we can't handle it here.
-ifdef CONFIG_MACH_MSM8974_G3_KDDI
-synaptics_firmware_subdir := g3_kddi_jp
+ifdef CONFIG_MACH_MSM8974_G3_KR
+synaptics_img_file := $(wildcard $(srctree)/firmware/synaptics/g3_kr/*)
+else ifdef CONFIG_MACH_MSM8974_G3_CN
+synaptics_img_file := $(wildcard $(srctree)/firmware/synaptics/g3_cn/*)
+else ifdef CONFIG_MACH_MSM8974_G3_CA
+synaptics_img_file := $(wildcard $(srctree)/firmware/synaptics/g3_ca/*)
+else
+synaptics_img_file := $(wildcard $(srctree)/firmware/synaptics/$(TARGET_PRODUCT)/*)
 endif
-ifdef CONFIG_MACH_MSM8974_G3_KDDI_EVB
-synaptics_firmware_subdir := g3_kddi_jp
-endif
-
-synaptics_img_file := $(wildcard $(srctree)/firmware/synaptics/$(synaptics_firmware_subdir)/*)
-
 synaptics_firmware := $(subst $(srctree)/firmware/,,$(synaptics_img_file))
 
 fw-shipped-$(CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4) += $(synaptics_firmware)
@@ -274,7 +268,7 @@ obj-$(CONFIG_FIRMWARE_IN_KERNEL) += $(patsubst %,%.gen.o, $(fw-shipped-y))
 
 # Remove .S files and binaries created from ihex
 # (during 'make clean' .config isn't included so they're all in $(fw-shipped-))
-targets := $(patsubst $(obj)/%,%, \
+targets := $(fw-shipped-) $(patsubst $(obj)/%,%, \
 				$(shell find $(obj) -name \*.gen.S 2>/dev/null))
 
 # Without this, built-in.o won't be created when it's empty, and the

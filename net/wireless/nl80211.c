@@ -223,7 +223,6 @@ static const struct nla_policy nl80211_policy[NL80211_ATTR_MAX+1] = {
 	[NL80211_ATTR_IE_RIC] = { .type = NLA_BINARY,
 				  .len = IEEE80211_MAX_DATA_LEN },
 	[NL80211_ATTR_PEER_AID] = { .type = NLA_U16 },
-
 	[NL80211_ATTR_CH_SWITCH_COUNT] = { .type = NLA_U32 },
 	[NL80211_ATTR_CH_SWITCH_BLOCK_TX] = { .type = NLA_FLAG },
 	[NL80211_ATTR_CSA_IES] = { .type = NLA_NESTED },
@@ -1951,8 +1950,8 @@ static int nl80211_get_key(struct sk_buff *skb, struct genl_info *info)
 
 	hdr = nl80211hdr_put(msg, info->snd_pid, info->snd_seq, 0,
 			     NL80211_CMD_NEW_KEY);
-	if (!hdr)
-		goto nla_put_failure;
+	if (IS_ERR(hdr))
+		return PTR_ERR(hdr);
 
 	cookie.msg = msg;
 	cookie.idx = key_idx;
@@ -2820,41 +2819,6 @@ static struct net_device *get_vlan(struct genl_info *info,
 	return ERR_PTR(ret);
 }
 
-static int nl80211_parse_sta_channel_info(struct genl_info *info,
-				      struct station_parameters *params)
-{
-	if (info->attrs[NL80211_ATTR_STA_SUPPORTED_CHANNELS]) {
-		params->supported_channels =
-		     nla_data(info->attrs[NL80211_ATTR_STA_SUPPORTED_CHANNELS]);
-		params->supported_channels_len =
-		     nla_len(info->attrs[NL80211_ATTR_STA_SUPPORTED_CHANNELS]);
-		/*
-		 * Need to include at least one (first channel, number of
-		 * channels) tuple for each subband, and must have proper
-		 * tuples for the rest of the data as well.
-		 */
-		if (params->supported_channels_len < 2)
-			return -EINVAL;
-		if (params->supported_channels_len % 2)
-			return -EINVAL;
-	}
-
-	if (info->attrs[NL80211_ATTR_STA_SUPPORTED_OPER_CLASSES]) {
-		params->supported_oper_classes =
-		 nla_data(info->attrs[NL80211_ATTR_STA_SUPPORTED_OPER_CLASSES]);
-		params->supported_oper_classes_len =
-		  nla_len(info->attrs[NL80211_ATTR_STA_SUPPORTED_OPER_CLASSES]);
-		/*
-		 * The value of the Length field of the Supported Operating
-		 * Classes element is between 2 and 253.
-		 */
-		if (params->supported_oper_classes_len < 2 ||
-		    params->supported_oper_classes_len > 253)
-			return -EINVAL;
-	}
-	return 0;
-}
-
 static struct nla_policy
 nl80211_sta_wme_policy[NL80211_STA_WME_MAX + 1] __read_mostly = {
 	[NL80211_STA_WME_UAPSD_QUEUES] = { .type = NLA_U8 },
@@ -2877,10 +2841,6 @@ static int nl80211_set_station_tdls(struct genl_info *info,
 	if (info->attrs[NL80211_ATTR_VHT_CAPABILITY])
 		params->vht_capa =
 			nla_data(info->attrs[NL80211_ATTR_VHT_CAPABILITY]);
-
-	err = nl80211_parse_sta_channel_info(info, params);
-	if (err)
-		return err;
 
 	/* parse WME attributes if present */
 	if (!info->attrs[NL80211_ATTR_STA_WME])
@@ -3147,10 +3107,6 @@ static int nl80211_new_station(struct sk_buff *skb, struct genl_info *info)
 	if (info->attrs[NL80211_ATTR_STA_PLINK_ACTION])
 		params.plink_action =
 		    nla_get_u8(info->attrs[NL80211_ATTR_STA_PLINK_ACTION]);
-
-	err = nl80211_parse_sta_channel_info(info, &params);
-	if (err)
-		return err;
 
 	if (!rdev->ops->add_station)
 		return -EOPNOTSUPP;
@@ -5403,9 +5359,6 @@ static int nl80211_testmode_dump(struct sk_buff *skb,
 					   NL80211_CMD_TESTMODE);
 		struct nlattr *tmdata;
 
-		if (!hdr)
-			break;
-
 		if (nla_put_u32(skb, NL80211_ATTR_WIPHY, phy_idx) < 0) {
 			genlmsg_cancel(skb, hdr);
 			break;
@@ -5797,8 +5750,9 @@ static int nl80211_remain_on_channel(struct sk_buff *skb,
 
 	hdr = nl80211hdr_put(msg, info->snd_pid, info->snd_seq, 0,
 			     NL80211_CMD_REMAIN_ON_CHANNEL);
-	if (!hdr) {
-		err = -ENOBUFS;
+
+	if (IS_ERR(hdr)) {
+		err = PTR_ERR(hdr);
 		goto free_msg;
 	}
 
@@ -6079,8 +6033,9 @@ static int nl80211_tx_mgmt(struct sk_buff *skb, struct genl_info *info)
 
 		hdr = nl80211hdr_put(msg, info->snd_pid, info->snd_seq, 0,
 				     NL80211_CMD_FRAME);
-		if (!hdr) {
-			err = -ENOBUFS;
+
+		if (IS_ERR(hdr)) {
+			err = PTR_ERR(hdr);
 			goto free_msg;
 		}
 	}
@@ -6640,8 +6595,9 @@ static int nl80211_probe_client(struct sk_buff *skb,
 
 	hdr = nl80211hdr_put(msg, info->snd_pid, info->snd_seq, 0,
 			     NL80211_CMD_PROBE_CLIENT);
-	if (!hdr) {
-		err = -ENOBUFS;
+
+	if (IS_ERR(hdr)) {
+		err = PTR_ERR(hdr);
 		goto free_msg;
 	}
 
@@ -6757,11 +6713,9 @@ static int nl80211_vendor_cmd(struct sk_buff *skb, struct genl_info *info)
 			data = nla_data(info->attrs[NL80211_ATTR_VENDOR_DATA]);
 			len = nla_len(info->attrs[NL80211_ATTR_VENDOR_DATA]);
 		}
-		rdev->cur_cmd_info = info;
-		err = rdev->wiphy.vendor_commands[i].doit(&rdev->wiphy, wdev,
+
+		return rdev->wiphy.vendor_commands[i].doit(&rdev->wiphy, wdev,
 							   data, len);
-		rdev->cur_cmd_info = NULL;
-		return err;
 	}
 
 	return -EOPNOTSUPP;
@@ -7410,7 +7364,7 @@ static struct genl_ops nl80211_ops[] = {
 		.doit = nl80211_vendor_cmd,
 		.policy = nl80211_policy,
 		.flags = GENL_ADMIN_PERM,
-		.internal_flags = NL80211_FLAG_NEED_NETDEV |
+		.internal_flags = NL80211_FLAG_NEED_WIPHY |
 				  NL80211_FLAG_NEED_RTNL,
 	},
 };

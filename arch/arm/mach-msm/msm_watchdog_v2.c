@@ -256,7 +256,7 @@ static void pet_watchdog(struct msm_watchdog_data *wdog_dd)
 	unsigned long long bark_time_ns = wdog_dd->bark_time * 1000000ULL;
 
 #ifdef CONFIG_MACH_LGE
-	pr_debug("%s\n", __func__);
+	printk(KERN_INFO "%s\n", __func__);
 #endif
 
 	for (i = 0; i < 2; i++) {

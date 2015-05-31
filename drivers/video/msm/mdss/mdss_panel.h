@@ -145,11 +145,6 @@ enum mdss_intf_events {
 	MDSS_EVENT_PANEL_CLK_CTRL,
 	MDSS_EVENT_DSI_CMDLIST_KOFF,
 	MDSS_EVENT_ENABLE_PARTIAL_UPDATE,
-#ifdef CONFIG_LGE_SHARPENING
-	MDSS_EVENT_SET_SHARPENING,
-	MDSS_EVENT_GET_SHARPENING,
-	MDSS_EVENT_QUEUE_SHARPENING,
-#endif
 };
 
 struct lcd_panel_info {
@@ -314,9 +309,7 @@ struct mdss_panel_info {
 	u32 panel_power_on;
 
 	uint32_t panel_dead;
-#ifdef CONFIG_MACH_LGE
 	int lcd_marker;
-#endif
 
 	struct lcd_panel_info lcdc;
 	struct fbc_panel_info fbc;

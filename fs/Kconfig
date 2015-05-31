@@ -8,10 +8,6 @@ menu "File systems"
 config DCACHE_WORD_ACCESS
        bool
 
-config FS_SYNC
-	bool "Add fsync sysfs node"
-	default n
-
 if BLOCK
 
 source "fs/ext2/Kconfig"
@@ -106,7 +102,6 @@ if BLOCK
 menu "DOS/FAT/NT Filesystems"
 
 source "fs/fat/Kconfig"
-source "fs/exfat/Kconfig"
 source "fs/ntfs/Kconfig"
 
 endmenu
@@ -229,7 +224,6 @@ source "fs/pstore/Kconfig"
 source "fs/sysv/Kconfig"
 source "fs/ufs/Kconfig"
 source "fs/exofs/Kconfig"
-source "fs/f2fs/Kconfig"
 
 endif # MISC_FILESYSTEMS
 

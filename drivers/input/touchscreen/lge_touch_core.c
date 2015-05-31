@@ -59,7 +59,6 @@ int quick_cover_status = 0;
 extern int boot_mode;
 extern int mfts_mode;
 static int factory_mode = 0;
-static int lpwg_status = 1;
 
 struct timeval t_ex_debug[EX_PROFILE_MAX];
 bool ghost_detection = 0;
@@ -148,11 +147,6 @@ void send_uevent_lpwg(struct i2c_client* client, int type)
 			&& atomic_read(&ts->state.uevent_state) == UEVENT_IDLE) {
 		atomic_set(&ts->state.uevent_state, UEVENT_BUSY);
 		send_uevent(lpwg_uevent[type-1]);
-		if (type == LPWG_DOUBLE_TAP) {
-			input_report_key(ts->input_dev, KEY_POWER, BUTTON_PRESSED);
-			input_report_key(ts->input_dev, KEY_POWER, BUTTON_RELEASED);
-			input_sync(ts->input_dev);
-		}
 	}
 }
 
@@ -2144,7 +2138,6 @@ static ssize_t store_lpwg_notify(struct i2c_client *client,
 			TOUCH_DEBUG(DEBUG_BASE_INFO, "LPWG_ENABLE : %s", (value[0]) ? "Enable\n" : "Disable\n");
 			touch_device_func->lpwg(client,
 				LPWG_ENABLE, value[0], NULL);
-			lpwg_status = (value[0]) ? 1 : 0;
 			break;
 		case 2 :
 			touch_device_func->lpwg(client,
@@ -2195,12 +2188,6 @@ static ssize_t store_lpwg_notify(struct i2c_client *client,
 	}
 	return count;
 }
-
-static ssize_t show_lpwg_notify(struct i2c_client *client, char *buf)
-{
-	return sprintf(buf, "%d\n", lpwg_status);
-}
-
 /* store_keyguard_info
  *
  * This function is related with Keyguard in framework.
@@ -2401,7 +2388,7 @@ static LGE_TOUCH_ATTR(notify, S_IRUGO | S_IWUSR, show_notify, store_notify);
 static LGE_TOUCH_ATTR(fw_upgrade, S_IRUGO | S_IWUSR, show_upgrade, store_upgrade);
 static LGE_TOUCH_ATTR(lpwg_data,
 		S_IRUGO | S_IWUSR, show_lpwg_data, store_lpwg_data);
-static LGE_TOUCH_ATTR(lpwg_notify, S_IRUGO | S_IWUSR, show_lpwg_notify, store_lpwg_notify);
+static LGE_TOUCH_ATTR(lpwg_notify, S_IRUGO | S_IWUSR, NULL, store_lpwg_notify);
 static LGE_TOUCH_ATTR(keyguard, S_IRUGO | S_IWUSR, NULL, store_keyguard_info);
 static LGE_TOUCH_ATTR(ime_status, S_IRUGO | S_IWUSR, show_ime_drumming_status, store_ime_drumming_status);
 static LGE_TOUCH_ATTR(quick_cover_status, S_IRUGO | S_IWUSR, NULL, store_quick_cover_status);
@@ -3072,8 +3059,6 @@ static int touch_probe(struct i2c_client *client,
 
 	set_bit(EV_SYN, ts->input_dev->evbit);
 	set_bit(EV_ABS, ts->input_dev->evbit);
-	set_bit(EV_KEY, ts->input_dev->evbit);
-	set_bit(KEY_POWER, ts->input_dev->keybit);
 	set_bit(INPUT_PROP_DIRECT, ts->input_dev->propbit);
 
 	input_set_abs_params(ts->input_dev,
